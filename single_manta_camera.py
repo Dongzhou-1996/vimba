@@ -21,8 +21,9 @@ if __name__ == '__main__':
                 while cv2.waitKey(3) != 27:
                     start_time = time.time()
                     frame = cam.get_frame()
-                    frame.convert_pixel_format(PixelFormat.Bgr8)
                     end_time = time.time()
+                    frame.convert_pixel_format(PixelFormat.Bgr8)
+
                     elapsed_time = end_time - start_time
                     print('elapsed time for image retrieve: {} s'.format(elapsed_time))
                     fps = 1.0 / elapsed_time
