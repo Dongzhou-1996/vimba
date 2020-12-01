@@ -33,6 +33,7 @@ THE IDENTIFICATION OF DEFECT SOFTWARE, HARDWARE AND DOCUMENTATION.
 import sys
 from typing import Optional
 from vimba import *
+import cv2
 
 
 def print_preamble():
@@ -107,7 +108,10 @@ def setup_camera(cam: Camera):
 
 def frame_handler(cam: Camera, frame: Frame):
     print('{} acquired {}'.format(cam, frame), flush=True)
-
+    frame.convert_pixel_format(PixelFormat.Bgr8)
+    image = frame.as_opencv_image()
+    cv2.namedWindow('single image', cv2.WINDOW_GUI_EXPANDED)
+    cv2.imshow('single image', image)
     cam.queue_frame(frame)
 
 
