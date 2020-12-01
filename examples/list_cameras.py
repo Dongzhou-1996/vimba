@@ -44,7 +44,7 @@ def print_camera(cam: Camera):
     print('/// Model Name    : {}'.format(cam.get_model()))
     print('/// Camera ID     : {}'.format(cam.get_id()))
     print('/// Serial Number : {}'.format(cam.get_serial()))
-
+    print('/// NIC ID        : {}'.format(cam.get_interface_id()))
 def main():
     print_preamble()
     with Vimba.get_instance() as vimba:
