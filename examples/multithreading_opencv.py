@@ -40,9 +40,10 @@ from typing import Optional
 from vimba import *
 
 
-FRAME_QUEUE_SIZE = 10
-FRAME_HEIGHT = 480
-FRAME_WIDTH = 480
+FRAME_QUEUE_SIZE = 1
+FRAME_WIDTH = 1080
+FRAME_HEIGHT = 1080
+
 
 
 def print_preamble():
@@ -154,7 +155,10 @@ class FrameProducer(threading.Thread):
 
         # Try to enable automatic exposure time setting
         try:
-            self.cam.ExposureAuto.set('Once')
+            # exposure_time = self.cam.ExposureTime
+            # exposure_time.set(1500)
+            self.cam.ExposureAuto.set('Off')
+
 
         except (AttributeError, VimbaFeatureError):
             self.log.info('Camera {}: Failed to set Feature \'ExposureAuto\'.'.format(
@@ -194,6 +198,7 @@ class FrameConsumer(threading.Thread):
 
     def run(self):
         IMAGE_CAPTION = 'Multithreading Example: Press <Enter> to exit'
+        cv2.namedWindow(IMAGE_CAPTION, cv2.WINDOW_GUI_EXPANDED)
         KEY_CODE_ENTER = 13
 
         frames = {}
@@ -207,6 +212,8 @@ class FrameConsumer(threading.Thread):
             while frames_left:
                 try:
                     cam_id, frame = self.frame_queue.get_nowait()
+                    add_camera_id(frame, cam_id)
+                    print('frame', frame)
 
                 except queue.Empty:
                     break
@@ -227,6 +234,7 @@ class FrameConsumer(threading.Thread):
 
             # If there are no frames available, show dummy image instead
             else:
+                i = 0
                 cv2.imshow(IMAGE_CAPTION, create_dummy_frame())
 
             # Check for shutdown condition

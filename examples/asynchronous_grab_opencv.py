@@ -35,6 +35,9 @@ import cv2
 from typing import Optional
 from vimba import *
 
+global MAX_BANDWIDTH
+MAX_BANDWIDTH = 115000000
+
 
 def print_preamble():
     print('///////////////////////////////////////////////////////')
@@ -95,9 +98,11 @@ def get_camera(camera_id: Optional[str]) -> Camera:
 
 def setup_camera(cam: Camera):
     with cam:
-        # Enable auto exposure time setting if camera supports it
+        # Disable auto exposure time setting
         try:
-            cam.ExposureAuto.set('Continuous')
+            cam.ExposureAuto.set('Off')
+            exposure_time = cam.get_feature_by_name('ExposureTimeAbs')
+            exposure_time.set(15000)
 
         except (AttributeError, VimbaFeatureError):
             pass
@@ -115,6 +120,28 @@ def setup_camera(cam: Camera):
 
             while not cam.GVSPAdjustPacketSize.is_done():
                 pass
+
+        except (AttributeError, VimbaFeatureError):
+            pass
+
+        # Try to modify Gev stream speed
+        try:
+            stream_speed = cam.get_feature_by_name('StreamBytesPerSecond')
+            print('=> original stream bandwidth: {}'.format(stream_speed.get()))
+            stream_speed.set(MAX_BANDWIDTH)
+            print('=> stream bandwidth have been allocated in maximumn'.format())
+
+        except (ArithmeticError, VimbaFeatureError):
+            pass
+
+        # Try to modify Gev frame rate.
+        try:
+            frame_rate = cam.get_feature_by_name('AcquisitionFrameRateAbs')
+            frame_rate_limt = cam.get_feature_by_name('AcquisitionFrameRateLimit')
+            print('=> orginal camera frame rate: {} / {}'.format(frame_rate.get(), frame_rate_limt.get()))
+            if frame_rate.get() < frame_rate_limt.get():
+                frame_rate.set(frame_rate_limt.get() - 1)
+                print('=> successfully set camera frame rate at {} fps'.format(frame_rate.get()))
 
         except (AttributeError, VimbaFeatureError):
             pass
@@ -143,6 +170,8 @@ class Handler:
 
     def __call__(self, cam: Camera, frame: Frame):
         ENTER_KEY_CODE = 13
+        frame_rate = cam.get_feature_by_name('AcquisitionFrameRateAbs').get()
+        frame_rate_limt = cam.get_feature_by_name('AcquisitionFrameRateLimit').get()
 
         key = cv2.waitKey(1)
         if key == ENTER_KEY_CODE:
@@ -150,18 +179,21 @@ class Handler:
             return
 
         elif frame.get_status() == FrameStatus.Complete:
+            image = frame.as_opencv_image()
             print('{} acquired {}'.format(cam, frame), flush=True)
-
             msg = 'Stream from \'{}\'. Press <Enter> to stop stream.'
-            cv2.imshow(msg.format(cam.get_name()), frame.as_opencv_image())
+            cv2.namedWindow(msg.format(cam.get_name()), cv2.WINDOW_GUI_EXPANDED)
+            cv2.putText(image, 'Frame: {:0.1f}/{:0.1f}'.format(frame_rate, frame_rate_limt), org=(30, 30),
+                        fontScale=1, color=255, thickness=1, fontFace=cv2.FONT_HERSHEY_COMPLEX_SMALL)
+            cv2.imshow(msg.format(cam.get_name()), image)
 
         cam.queue_frame(frame)
 
 
 def main():
     print_preamble()
-    cam_id = parse_args()
-
+    # cam_id = parse_args()
+    cam_id = 'DEV_000F314EC10A'
     with Vimba.get_instance():
         with get_camera(cam_id) as cam:
 
@@ -171,7 +203,7 @@ def main():
 
             try:
                 # Start Streaming with a custom a buffer of 10 Frames (defaults to 5)
-                cam.start_streaming(handler=handler, buffer_count=10)
+                cam.start_streaming(handler=handler, buffer_count=1)
                 handler.shutdown_event.wait()
 
             finally:
