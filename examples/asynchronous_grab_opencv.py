@@ -128,8 +128,8 @@ def setup_camera(cam: Camera):
         try:
             stream_speed = cam.get_feature_by_name('StreamBytesPerSecond')
             print('=> original stream bandwidth: {}'.format(stream_speed.get()))
-            stream_speed.set(MAX_BANDWIDTH)
-            print('=> stream bandwidth have been allocated in maximumn'.format())
+            stream_speed.set(stream_speed.get_range()[1])
+            print('=> stream bandwidth have been allocated in maximum ({})'.format(stream_speed.get()))
 
         except (ArithmeticError, VimbaFeatureError):
             pass
@@ -138,10 +138,10 @@ def setup_camera(cam: Camera):
         try:
             frame_rate = cam.get_feature_by_name('AcquisitionFrameRateAbs')
             frame_rate_limt = cam.get_feature_by_name('AcquisitionFrameRateLimit')
-            print('=> orginal camera frame rate: {} / {}'.format(frame_rate.get(), frame_rate_limt.get()))
+            print('=> orginal camera frame rate: {:.2f} / {:.2f}'.format(frame_rate.get(), frame_rate_limt.get()))
             if frame_rate.get() < frame_rate_limt.get():
                 frame_rate.set(frame_rate_limt.get() - 1)
-                print('=> successfully set camera frame rate at {} fps'.format(frame_rate.get()))
+                print('=> successfully set camera frame rate at {:.2f} fps'.format(frame_rate.get()))
 
         except (AttributeError, VimbaFeatureError):
             pass

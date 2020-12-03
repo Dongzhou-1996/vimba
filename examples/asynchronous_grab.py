@@ -104,6 +104,12 @@ def setup_camera(cam: Camera):
         except (AttributeError, VimbaFeatureError):
             pass
 
+        # Try to modify GeV stream speed
+        try:
+            stream_speed = cam.get_feature_by_name('StreamBytesPerSecond')
+            print('stream bandwidth range: ', stream_speed.get_range()[1])
+        except (AttributeError, VimbaFeatureError):
+            pass
 
 def frame_handler(cam: Camera, frame: Frame):
     print('{} acquired {}'.format(cam, frame), flush=True)
@@ -113,8 +119,8 @@ def frame_handler(cam: Camera, frame: Frame):
 
 def main():
     print_preamble()
-    cam_id = parse_args()
-
+    #cam_id = parse_args()
+    cam_id = 'DEV_000F314EC109'
     with Vimba.get_instance():
         with get_camera(cam_id) as cam:
 
